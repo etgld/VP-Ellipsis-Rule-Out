@@ -8,6 +8,8 @@ from nltk.tree import Tree
 from nltk.corpus import wordnet as wn
 from nltk.treeprettyprinter import TreePrettyPrinter
 from pattern.en import conjugate
+from pattern.en import INFINITIVE, PRESENT, SG, SUBJUNCTIVE, PAST, PARTICIPLE
+
 
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
@@ -25,6 +27,15 @@ def is_aux(ptree):
 
 def is_non_aux(ptree):
     return ptree.label()[:2] == 'VB'
+
+def is_embedded(ptree):
+    pass
+
+def contains_embedded(ptree):
+    pass
+
+def is_simple(ptree):
+    return (ptree.label() == 'ROOT' or ptree.label() == 'S1') and (not contains_embedded(ptree))
 
 def clause_overt_v_head(ptree):
     pass
