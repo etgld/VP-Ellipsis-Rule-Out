@@ -5,25 +5,38 @@ import ast
 from stanza.server import CoreNLPClient
 from bllipparser import RerankingParser
 from nltk.tree import Tree
+from nltk.corpus import wordnet as wn
 from nltk.treeprettyprinter import TreePrettyPrinter
+from pattern.en import conjugate
 
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
-dominators = ['S', 'SBAR', 'SBARQ', 'SINV', 'SQ']
 
-def listify_tree(s):
-    s = s.replace('\n', '')
-    s = s.replace("'", '')
-    s = s.replace("(", "[")  
-    s = s.replace(")", "]")
-    s = re.sub(r"([\w\-?$]+[\.,]?)", r"'\g<1>'", s)
-    s = re.sub(r'\[([\.,?])', r"['\g<1>'", s)
-    s = re.sub(r'\s+([\.,?])', r" '\g<1>'", s)
-    s = re.sub(r'(\])\s+', r"\g<1>, ", s)
-    s = re.sub(r'([\'][\w\-?$]+[\.,]?[\'])\s+', r'\g<1>, ', s)
-    s = re.sub(r'([\'][\.,?][\'])\s+', r'\g<1>, ', s)
-    return ast.literal_eval(s)
+auxes = {'have', 'be', 'do', 'would', 'could',  'might'}
+aux_level = 'MD'
+clause_levels = {'S', 'SBAR', 'SBARQ', 'SINV', 'SQ'}
+
+def non_finite(v):
+    return conjugate(v, tense = "infinitive")
+
+def is_aux(ptree):
+    return ptree.label() == 'MD'
+
+def is_non_aux(ptree):
+    return ptree.label()[:2] == 'VB'
+
+def clause_overt_v_head(ptree):
+    pass
+
+def rule_out(ptree):
+    pass
+
+def list2ptree(s):
+    return ParentedTree.fromstring(s)
+
+def overt_not_aux(ptree):
+    
 
 def main():
     f_name = sys.argv[1]
