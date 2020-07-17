@@ -16,26 +16,42 @@ client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
 
 auxes = {'have', 'be', 'do', 'would', 'could',  'might'}
-aux_level = 'MD'
 clause_levels = {'S', 'SBAR', 'SBARQ', 'SINV', 'SQ'}
+root_levels = {'ROOT', 'S1'}
 
 def non_finite(v):
-    return conjugate(v, tense = "infinitive")
+    return {conjugate(v, INFINITIVE),
+            conjugate(v, PAST+PARTICIPLE),
+            conjugate(v, PRESENT+PARTICIPLE)}
 
-def is_aux(ptree):
-    return ptree.label() == 'MD'
+def is_non_finite(v):
+    return v in non_finite(v)
 
-def is_non_aux(ptree):
-    return ptree.label()[:2] == 'VB'
+def is_aux(v):
+    return (v == 'MD') or (conjugate(v, INFINITIVE) in auxes) 
 
-def is_embedded(ptree):
-    pass
+def is_non_aux(v):
+    return v[:2] == 'VB'
 
-def contains_embedded(ptree):
-    pass
+# returns the nearest upper embedded clause 
+def sup_embedded(ptree):
+    if ptree.label() in root_levels.union(clause_levels)):
+        if (ptree.parent().label() in root_levels.union(clause_levels)):
+            return None
+        else:
+            return ptree
+    else:
+        sup_embedded(ptree.parent()) 
 
+# returns the nearest lower embedded clause
+def inf_embedded(ptree):
+    if ptree.label() in root_levels.union(clause_levels)):
+        for i, stree in enumerate(ptree):
+            
 def is_simple(ptree):
-    return (ptree.label() == 'ROOT' or ptree.label() == 'S1') and (not contains_embedded(ptree))
+    isroot =  (ptree.label() == 'ROOT' or ptree.label() == 'S1') 
+    no_embedded = all[(not contains_embedded(stree)) for i, stree in enumerate(ptree)]
+    return isroot and no_embedded
 
 def clause_overt_v_head(ptree):
     pass
@@ -58,9 +74,9 @@ def main():
         text = temp[1]
         ann = client.annotate(text, output_format='json')
         s_parse_tree = ann['sentences'][0]['parse']
-        s_final = listify_tree(s_parse_tree)
+        s_final = list2ptree(s_parse_tree)
         b_parse_tree = rrp.simple_parse(text)
-        b_final = listify_tree(b_parse_tree)
+        b_final = list2ptree(b_parse_tree)
         print("index : {0} \n\n Stanford tree: \n {1} \n\n Charniak tree: \n {1}".format(index,
                                                                                          s_final,
                                                                                          b_final))
