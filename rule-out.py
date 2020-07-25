@@ -70,7 +70,7 @@ def sup_embedded(ptree):
         sup_embedded(ptree.parent()) 
 
 # returns the nearest lower embedded clauses
-def inf_embedded(ptree, embedded = []):
+def inf_embedded(ptree, embedded):
     if children(ptree) == ptree.leaves():
         return None
     elif ptree.label() in root_levels:
@@ -112,10 +112,8 @@ def main():
     for test in tests:
         s_parse_tree = stanford_parse(test)
         s_final = list2ptree(s_parse_tree)
-        #b_parse_tree = rrp.simple_parse(test)
-        #b_final = list2ptree(b_parse_tree)
         s_final.pretty_print()
-        for elem in inf_embedded(s_final):
+        for elem in inf_embedded(s_final, []):
             elem.pretty_print()
         
 if __name__ == "__main__":
