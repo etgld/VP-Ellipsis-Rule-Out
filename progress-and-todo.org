@@ -9,7 +9,7 @@
   - =pip install bllipparser pattern=    
   - =python -mbllipparser.ModelFetcher -l=    
   - =python -mbllipparser.ModelFetcher -i <Model Name>=    
- 
+  -  For Windows, building =bllipparser= is trickier, a list of builds for Windows are available here =https://github.com/BLLIP/bllip-parser#other-versions-of-the-parser=  
 * Current Progress
 ** Working state of the art parsers: Stanford and BLLIP (formerly Charniak) parsers
 ** Transforming their output into various forms more useful for our purposes (latex trees, python lists)
