@@ -4,6 +4,7 @@
   - =conda activate VPE=           
   - =conda install nltk pip=
   - =conda install -c stanfordnlp stanza=     
+  - Follow the instructions for installing the Stanford CoreNLP suite as instructed here =https://github.com/stanfordnlp/stanza#accessing-java-stanford-corenlp-software=
   - =python -m pip install --upgrade pip= 
   - =pip install bllipparser pattern=    
   - =python -mbllipparser.ModelFetcher -l=    

@@ -23,6 +23,13 @@ clause_levels = {'S', 'SBAR', 'SBARQ', 'SINV', 'SQ'}
 root_levels = {'ROOT', 'S1'}
 punct = {'.', '.', '?'}
 
+def stanford_parse(s):
+    ann = client.annotate(s, output_format='json')
+    return ann['sentences'][0]['parse']
+    
+def bllip_parse(s):
+    return rrp.simple_parse(s)
+
 # This guards against multiple identical
 # subtrees appearing in the full tree barring
 # some bizarre literary case like
@@ -66,15 +73,15 @@ def sup_embedded(ptree):
 def inf_embedded(ptree, embedded = []):
     if children(ptree) == ptree.leaves():
         return None
-    if ptree.label() in root_levels:
+    elif ptree.label() in root_levels:
         for stree in ptree:
             if stree.label() in clause_levels:
                 inf_embedded(stree, embedded)
-    if ptree.label() in clause_levels:
+    elif ptree.label() in clause_levels:
         for stree in ptree:
             if stree.label() not in clause_levels:
                 inf_embedded(stree, embedded)
-    if ptree.label() not in root_levels.union(clause_levels):
+    elif ptree.label() not in root_levels.union(clause_levels):
         for stree in ptree:
             if stree.label() in clause_levels:
                 embedded.append(stree)
@@ -103,8 +110,7 @@ def overt_not_aux(ptree):
 
 def main():
     for test in tests:
-        ann = client.annotate(test, output_format='json')
-        s_parse_tree = ann['sentences'][0]['parse']
+        s_parse_tree = stanford_parse(test)
         s_final = list2ptree(s_parse_tree)
         #b_parse_tree = rrp.simple_parse(test)
         #b_final = list2ptree(b_parse_tree)
