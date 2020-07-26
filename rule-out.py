@@ -14,7 +14,7 @@ rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/W
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
 test1 = "He wouldn't make the rice if it had already been made."
-test2 = "The first plumber, who arrived before three, and the second, who arrived after four, both said the pipe was clogged."
+test2 = "The first plumber, who arrived before three, and the second plumber, who arrived after four, both said the pipe was clogged."
 test3 = "The doctor who talked to us said the swelling would probably be gone after two days."
 tests = {test1, test2, test3}
 
@@ -42,6 +42,13 @@ def peq(p1, p2):
 def children(ptree):
     return [stree for stree in ptree]
 
+def find_childen(ptree, label):
+    results = []
+    for child in ptree:
+        if child.label() == label:
+            results.append(child)
+    return results
+
 def non_finite(v):
     return {conjugate(v, INFINITIVE),
             conjugate(v, PAST+PARTICIPLE),
@@ -55,6 +62,9 @@ def is_aux(v):
 
 def is_non_aux(v):
     return v.label()[:2] == 'VB'
+
+def is_verb(v):
+    return is_aux(v) or is_non_aux(v)
 
 # returns the nearest upper embedded clause
 # (determines if the immediate clause is embedded) 
@@ -89,15 +99,26 @@ def inf_embedded(ptree, embedded):
                 inf_embedded(stree, embedded)        
     return embedded
 
+def clause_overt_v_head(ptree):
+    if ptree.label() in root_levels:
+        return clause_overt_v_head(children(ptree)[0])
+    elif ptree.label() in clause_levels:
+        for stree in ptree:
+            if stree.label() == 'VP':
+                return clause_overt_v_head(stree)
+            elif stree.label() in clause_levels:
+                return clause_overt_v_head(stree)
+    elif ptree.label() == 'VP':
+        vps = find_childen(ptree, 'VP')
+        if vps:
+            return clause_overt_v_head(vps[0])
+        else:
+           for stree in ptree:
+               if is_verb(stree):
+                   return stree
+        
 def is_simple(ptree): 
     return all([(not contains_embedded(stree)) for stree in ptree.root()])
-
-def find_childen(ptree, label):
-    results = []
-    for child in ptree:
-        if child.label() == label:
-            results.append(child)
-    return results
 
 def rule_out(ptree):
     pass
@@ -113,25 +134,11 @@ def main():
         s_parse_tree = stanford_parse(test)
         s_final = list2ptree(s_parse_tree)
         s_final.pretty_print()
-        for elem in inf_embedded(s_final, []):
-            elem.pretty_print()
+        #print(test)
+        print("VERB: {0}".format(clause_overt_v_head(s_final)))
+        #for elem in inf_embedded(s_final, []):
+        #    elem.pretty_print()
         
 if __name__ == "__main__":
     main()
-
-'''
-def clause_overt_v_head(ptree):
-    head_tag = children(ptree)[0]
-    if ptree.label() in root_levels:
-        return clause_overt_v_head(head_tag)
-    if ptree.label() in clause_levels:
-        if head_tag.label() in clause_levels.union('VP'):
-            return clause_overt_v_head(head_tag)
-    if ptree.label() == 'VP':
-        if head_tag.label() == 'VP':
-            return clause_overt_v_head(head_tag)
-        else:
-            return head_tag
-'''
-
     
