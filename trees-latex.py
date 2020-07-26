@@ -4,11 +4,12 @@ import re
 from stanza.server import CoreNLPClient
 from bllipparser import RerankingParser
 from nltk.tree import Tree
-from nltk.treeprettyprinter import TreePrettyPrinter
 
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
+# Not sure how many of these packages
+# are necessary besides forest, landscape + geometry, and adjustbox
 head = """\\documentclass[landscape, 12pt]{article} 
 \\usepackage{amsfonts}
 \\usepackage{amstext}
@@ -33,13 +34,24 @@ head = """\\documentclass[landscape, 12pt]{article}
 tail = """\\end{enumerate}
 \\end{document}"""
 
+def stanford_parse(s):
+    ann = client.annotate(s, output_format='json')
+    return ann['sentences'][0]['parse']
+    
+def bllip_parse(s):
+    return rrp.simple_parse(s)
+
 def texify_tree(s):
     s_parse_tree = s.replace("(", "[")  
     s_parse_tree = s_parse_tree.replace(")", "]")
     s_parse_tree = s_parse_tree.replace("$", "\$")
+    # Italicize leaves by convention
     s_parse_tree = re.sub(r'\s+(([A-Z]?[a-z]|[.,?]){1,})', r' [ \\textit{ \g<1> } ]', s_parse_tree)
+    # This is specifically to deal with commas in the tree
+    # which throw off forest (like a lot of things...)
     s_parse_tree = re.sub(r'\[(,)', r'[ \\textit{ \g<1> }', s_parse_tree)
     s_parse_tree = "\n \\begin{{forest}} \n{0}\n \\end{{forest}} \n".format(s_parse_tree)
+    # adjustbox is what gets most of these to fit to the page (even in landscape)
     return "\n \\begin{{adjustbox}}{{max size={{\\textwidth}}{{\\textheight}}}} \n{0}\n \\end{{adjustbox}} \n".format(s_parse_tree)
 
 def main():
@@ -50,17 +62,16 @@ def main():
     count = 1
     out.write(head)
     for line in f:
+        # This script takes a plain text file
+        # with lines of the format <entry name>:<sentence>  
         temp = line.split(':')
         index = temp[0]
         text = temp[1]
         out.write("\\begin{samepage}")
         out.write("\n\n \\item  \\verb|{0}|  \n\n".format(index))
         out.write("\n\n {{\\it {0} }} \n\n".format(text.rstrip()))
-        ann = client.annotate(text, output_format='json')
-        s_parse_tree = ann['sentences'][0]['parse']
-        s_final = texify_tree(s_parse_tree)
-        b_parse_tree = rrp.simple_parse(text)
-        b_final = texify_tree(b_parse_tree)
+        s_final = texify_tree(stanford_parse(text))
+        b_final = texify_tree(bllip_parse(text))
         out.write("\\begin{itemize} \n\n \\item {\\bf Stanford Parser :} \n\n ")
         out.write(s_final)
         out.write("\n\n \\item {\\bf Charniak Parser: } \n\n") 
