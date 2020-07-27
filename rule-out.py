@@ -43,11 +43,7 @@ def children(ptree):
     return [stree for stree in ptree]
 
 def find_childen(ptree, label):
-    results = []
-    for child in ptree:
-        if child.label() == label:
-            results.append(child)
-    return results
+    return [stree for stree in ptree if stree.label() == label]
 
 # for a given verb return it's non-finite forms
 # since in any case of VPE in English
@@ -125,7 +121,7 @@ def clause_overt_v_head(ptree):
         for stree in ptree:
             # The priority is to find the main VP so look
             # for that first
-            if stree.label() in  clause_levels.union('VP'):
+            if stree.label() == 'VP':
                 return clause_overt_v_head(stree)
             # If no VP is found look in any children 
             # which are clauses
