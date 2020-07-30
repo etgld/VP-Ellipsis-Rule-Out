@@ -155,14 +155,21 @@ def overt_not_aux(ptree):
     return not is_aux(clause_overt_v_head(ptree)) 
 
 def main():
-    for test in tests:
+    f_name = sys.argv[1]
+    if f_name:
+        f = open(f_name, 'r')
+        sentences = [line.split(':')[1] for line in f]
+        print(sentences)
+    else:
+        sentences = tests
+    for test in sentences:
         s_parse_tree = stanford_parse(test)
         s_final = list2ptree(s_parse_tree)
         print(test)
         s_final.pretty_print()
         print("VERB: {0}".format(clause_overt_v_head(s_final)))
-        for elem in inf_embedded(s_final, []):
-            elem.pretty_print()
+        #for elem in inf_embedded(s_final, []):
+        #    elem.pretty_print()
         
 if __name__ == "__main__":
     main()
