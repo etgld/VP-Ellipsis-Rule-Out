@@ -146,14 +146,15 @@ def is_simple(ptree):
     return all([(not inf_embedded(stree)) for stree in ptree.root()])
 
 def rule_out(ptree):
+    pass
+
+# requirement to be a valid case of VPE
+def clause_elided_non_finite(ptree):
     v_head = clause_overt_v_head(ptree)
-    elided_finite = is_non_finite(v_head) and not is_aux(v_head)
+    return is_non_finite(v_head) and not is_aux(v_head)
 
 def list2ptree(s):
     return ParentedTree.fromstring(s)
-
-def overt_not_aux(ptree):
-    return not is_aux(clause_overt_v_head(ptree)) 
 
 def main():
     f_name = sys.argv[1]
