@@ -12,6 +12,15 @@ from pattern.en import INFINITIVE, PRESENT, SG, SUBJUNCTIVE, PAST, PARTICIPLE
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
+modal_aux_ts = set([line.strip() for line in open('modal_aux_triggers')])
+have_ts = set(open('have_triggers').read().split())
+be_ts = set(open('be_triggers').read().split())
+do_ts = set(open('do_triggers').read().split())
+to_ts = set(open('to_triggers').read().split())
+not_ts = set('not')
+non_standard_ts = set(open('non-standard_triggers').read().split())
+
+
 # Tests for embedded clause functions
 test1 = "He wouldn't make the rice if it had already been made."
 test2 = "The first plumber, who arrived before three, and the second plumber, who arrived after four, both said the pipe was clogged."
