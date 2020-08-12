@@ -181,7 +181,7 @@ def main():
         print("VERB: {0}".format(clause_overt_v_head(s_final)))
         #for elem in inf_embedded(s_final, []):
         #    elem.pretty_print()
-        
+    
 if __name__ == "__main__":
     main()
     
