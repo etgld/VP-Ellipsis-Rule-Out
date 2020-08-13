@@ -6,8 +6,12 @@ from stanza.server import CoreNLPClient
 from bllipparser import RerankingParser
 from nltk.tree import ParentedTree
 from nltk.treeprettyprinter import TreePrettyPrinter
+from spacy.lang.en import English
 from pattern.en import conjugate
 from pattern.en import INFINITIVE, PRESENT, SG, SUBJUNCTIVE, PAST, PARTICIPLE
+
+nlp = English()
+tokenizer = nlp.Defaults.create_tokenizer(nlp)
 
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
@@ -19,8 +23,11 @@ do_ts = set(open('do_triggers').read().split())
 to_ts = set(open('to_triggers').read().split())
 not_ts = set('not')
 non_standard_ts = set(open('non-standard_triggers').read().split())
+triggers = modal_aux_ts.union(have_ts).union(be_ts).union(do_ts).union(to_ts).union(not_ts)
 
-
+def possible_trigger_sites(s):
+    tokens = tokenizer(s)
+    
 # Tests for embedded clause functions
 test1 = "He wouldn't make the rice if it had already been made."
 test2 = "The first plumber, who arrived before three, and the second plumber, who arrived after four, both said the pipe was clogged."
