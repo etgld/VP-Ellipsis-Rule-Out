@@ -25,8 +25,25 @@ not_ts = set('not')
 non_standard_ts = set(open('non-standard_triggers').read().split())
 triggers = modal_aux_ts.union(have_ts).union(be_ts).union(do_ts).union(to_ts).union(not_ts)
 
-def possible_trigger_sites(s):
-    tokens = tokenizer(s)
+# unfortunately the ParentedTree data structure
+# treats leaves as just strings
+# without labels or parents.
+# This workaround adapted from https://stackoverflow.com/a/25972853
+# potential issues if there are multiple instances of the same trigger
+def leaf_parent(ptree, l):
+    leaves = ptree.leaves()
+    leaf_idx = leaves.index(l)
+    tree_loc = ptree.leaf_treeposition(leaf_idx)
+    parent_loc = tree_loc[:-1]
+    return ptree[parent_loc]
+
+def possible_trigger_sites(ptree):
+    leaves = ptree.leaves()
+    sites = []
+    for leaf in leaves:
+        if leaf in triggers:
+            sites.append(leaf_parent(ptree, leaf))
+    return sites
     
 # Tests for embedded clause functions
 test1 = "He wouldn't make the rice if it had already been made."
@@ -78,14 +95,14 @@ def is_non_finite(v):
 def is_aux(v):
     return (v.label() == 'MD') or (conjugate(children(v)[0], INFINITIVE) in auxes) 
 
-def possibe_v_head(v):
+def possible_v_head(v):
     return v.label()[:2] == 'VB'
 
 # For this we only care
 # about the tag since calling the
 # pattern library can add time
 def is_verb(v):
-    return (v.label() == 'MD') or possibe_v_head(v)
+    return (v.label() == 'MD') or possible_v_head(v)
 
 # returns the nearest upper embedded clause
 # (determines if the immediate clause is embedded) 
@@ -173,9 +190,8 @@ def list2ptree(s):
     return ParentedTree.fromstring(s)
 
 def main():
-    f_name = sys.argv[1]
-    if f_name:
-        f = open(f_name, 'r')
+    if len(sys.argv) > 1:
+        f = open(sys.argv[1], 'r')
         sentences = [line.split(':')[1] for line in f]
         print(sentences)
     else:
@@ -188,7 +204,9 @@ def main():
         print("VERB: {0}".format(clause_overt_v_head(s_final)))
         #for elem in inf_embedded(s_final, []):
         #    elem.pretty_print()
-    
+        for site in possible_trigger_sites(s_final):
+           site.pretty_print()
+           
 if __name__ == "__main__":
     main()
     
