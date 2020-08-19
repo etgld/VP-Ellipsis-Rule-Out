@@ -54,7 +54,8 @@ def possible_trigger_sites(ptree):
     sites = []
     for leaf in leaves:
         if leaf in triggers:
-            sites.append(leaf_parent(ptree, leaf))
+            # sites.append(leaf_parent(ptree, leaf))
+            sites.append(leaf_parent(ptree, leaf).parent())
     return sites
                 
 def stanford_parse(s):
@@ -79,10 +80,13 @@ def children(ptree):
 def find_childen(ptree, label):
     return [stree for stree in ptree if stree.label() == label]
 
-def tree_minus(main_tree, sub_tree):
+# return given main tree without the instance
+# of the given subtrees - using peq to avoid deletion
+# of otherwise identical subtrees
+def tree_minus(main_tree, sub_trees):
     # using deep-copy since non-naive/destructive editing is tricky for nltk trees
     result = deepcopy(main_tree) 
-    for stree in result.subtrees(filter = lambda x : peq(x, sub_tree)):
+    for stree in result.subtrees(filter = lambda x : any([peq(x, stree) for stree in sub_trees])):
         s_parent = stree.parent()
         s_idx = s_parent.index(stree)
         s_parent.__delitem__(s_idx)
@@ -210,13 +214,21 @@ def main():
         s_parse_tree = stanford_parse(test)
         s_final = list2ptree(s_parse_tree)
         print(test)
-        s_final.pretty_print()
         print("VERB: {0}".format(clause_overt_v_head(s_final)))
         #for elem in inf_embedded(s_final, []):
         #    elem.pretty_print()
-        for site in possible_trigger_sites(s_final):
-           site.pretty_print()
-           
+        pts = possible_trigger_sites(s_final)
+        altered = tree_minus(s_final, pts)
+        print("####### ORIGINAL #######")
+        s_final.pretty_print()
+        print("####### ALTERED #######")
+        altered.pretty_print()
+        count = 0
+        for site in pts:
+            print("### SITE {0} ###".format(count))
+            site.pretty_print()
+            count += 1
+            
 if __name__ == "__main__":
     main()
     
