@@ -2,28 +2,40 @@ import sys
 import string
 import re
 import ast
+
 from stanza.server import CoreNLPClient
 from bllipparser import RerankingParser
+
 from nltk.tree import ParentedTree
 from nltk.treeprettyprinter import TreePrettyPrinter
-from spacy.lang.en import English
+
 from pattern.en import conjugate
 from pattern.en import INFINITIVE, PRESENT, SG, SUBJUNCTIVE, PAST, PARTICIPLE
 
-nlp = English()
-tokenizer = nlp.Defaults.create_tokenizer(nlp)
+from copy import deepcopy
+
+# Tests for embedded clause functions
+test1 = "He wouldn't make the rice if it had already been made."
+test2 = "The first plumber, who arrived before three, and the second plumber, who arrived after four, both said the pipe was clogged."
+test3 = "The doctor who talked to us said the swelling would probably be gone after two days."
+tests = {test1, test2, test3}
+
+auxes = {'have', 'be', 'do', 'would', 'could',  'might'}
+clause_levels = {'S', 'SBAR', 'SBARQ', 'SINV', 'SQ'}
+root_levels = {'ROOT', 'S1'}
+punct = {'.', '.', '?'}
 
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
-modal_aux_ts = set([line.strip() for line in open('modal_aux_triggers')])
+modal_aux_ts = set(open('modal_aux_triggers').read().split())
 have_ts = set(open('have_triggers').read().split())
 be_ts = set(open('be_triggers').read().split())
 do_ts = set(open('do_triggers').read().split())
 to_ts = set(open('to_triggers').read().split())
 not_ts = set('not')
 non_standard_ts = set(open('non-standard_triggers').read().split())
-triggers = modal_aux_ts.union(have_ts).union(be_ts).union(do_ts).union(to_ts).union(not_ts)
+triggers = modal_aux_ts.union(have_ts, be_ts, do_ts, to_ts, not_ts)
 
 # unfortunately the ParentedTree data structure
 # treats leaves as just strings
@@ -44,18 +56,7 @@ def possible_trigger_sites(ptree):
         if leaf in triggers:
             sites.append(leaf_parent(ptree, leaf))
     return sites
-    
-# Tests for embedded clause functions
-test1 = "He wouldn't make the rice if it had already been made."
-test2 = "The first plumber, who arrived before three, and the second plumber, who arrived after four, both said the pipe was clogged."
-test3 = "The doctor who talked to us said the swelling would probably be gone after two days."
-tests = {test1, test2, test3}
-
-auxes = {'have', 'be', 'do', 'would', 'could',  'might'}
-clause_levels = {'S', 'SBAR', 'SBARQ', 'SINV', 'SQ'}
-root_levels = {'ROOT', 'S1'}
-punct = {'.', '.', '?'}
-
+                
 def stanford_parse(s):
     ann = client.annotate(s, output_format='json')
     return ann['sentences'][0]['parse']
@@ -77,6 +78,15 @@ def children(ptree):
 
 def find_childen(ptree, label):
     return [stree for stree in ptree if stree.label() == label]
+
+def tree_minus(main_tree, sub_tree):
+    # using deep-copy since non-naive/destructive editing is tricky for nltk trees
+    result = deepcopy(main_tree) 
+    for stree in result.subtrees(filter = lambda x : peq(x, sub_tree)):
+        s_parent = stree.parent()
+        s_idx = s_parent.index(stree)
+        s_parent.__delitem__(s_idx)
+    return result
 
 # for a given verb return it's non-finite forms
 # since in any case of VPE in English
