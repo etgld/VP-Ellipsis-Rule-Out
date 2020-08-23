@@ -57,7 +57,7 @@ def texify_tree(s):
 def main():
     f_name = sys.argv[1]
     f = open(f_name, 'r')
-    out_name = 'Result_Trees.tex'
+    out_name = f_name.split('.')[0] + '.tex'
     out = open(out_name, 'w')
     count = 1
     out.write(head)

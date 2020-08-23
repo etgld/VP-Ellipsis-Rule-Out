@@ -65,20 +65,46 @@ def stanford_parse(s):
 def bllip_parse(s):
     return rrp.simple_parse(s)
 
+# tree positions are represented via tuples
+# containing the indices of their ancestors with respect to
+# previous ancestor starting from the root and going down
+def overlap(t1, t2):
+    least = min(len(t1), len(t2))
+    return t1[:least] < t2[:least]
+
+# stree1 precedes stree2 in ptree if stree1 is to the left
+# of stree2 in ptree and stree1 is not a subtree of stree2
+def precedes(ptree, stree1, stree2):
+    pst = ptree.subtrees()
+    guard1 = stree1 in pst 
+    guard2 = stree2 in pst
+    if (not guard1 or not guard2):
+        return False
+    return overlap(stree1.treeposition(), stree2.treeposition())
+
+def preceding_VPs(main_tree, trigger_site):
+    pass
+
 # This guards against multiple identical
 # subtrees appearing in the full tree barring
 # some bizarre literary case like
 # "We saw the cars go by and we saw the cars go by"
 def peq(p1, p2):
     teq = p1 == p2
+    # might be redundant -- need to check
     place_eq = p1.parent() == p2.parent()
     return teq and place_eq
 
+# returns list of immediate children of a ParentedTree
 def children(ptree):
     return [stree for stree in ptree]
 
+# returns list of immediate children of a ParentedTree with a certain label
 def find_childen(ptree, label):
     return [stree for stree in ptree if stree.label() == label]
+
+def find_VPs(ptree):
+   return [stree for stree in ptree.subtrees(filter = lambda x : x.label() == 'VP' and x.parent().label() != 'VP')] 
 
 # return given main tree without the instance
 # of the given subtrees - using peq to avoid deletion
@@ -215,18 +241,19 @@ def main():
         s_final = list2ptree(s_parse_tree)
         print(test)
         print("VERB: {0}".format(clause_overt_v_head(s_final)))
-        #for elem in inf_embedded(s_final, []):
-        #    elem.pretty_print()
         pts = possible_trigger_sites(s_final)
-        altered = tree_minus(s_final, pts)
+        #altered = tree_minus(s_final, pts)
+        altered = find_VPs(s_final)
         print("####### ORIGINAL #######")
         s_final.pretty_print()
         print("####### ALTERED #######")
-        altered.pretty_print()
+        #altered.pretty_print()
         count = 0
-        for site in pts:
+        #for site in pts:
+        for site in altered:
             print("### SITE {0} ###".format(count))
             site.pretty_print()
+            print(site.treeposition())
             count += 1
             
 if __name__ == "__main__":
