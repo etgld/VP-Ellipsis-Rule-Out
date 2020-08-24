@@ -82,7 +82,7 @@ def precedes(stree1, stree2):
     return t1[:least] <= t2[:least]
 
 def is_clause_VP(ptree):
-    return x.label() == 'VP' and x.parent().label() != 'VP'
+    return ptree.label() == 'VP' and ptree.parent().label() != 'VP'
 
 def preceding_VPs(main_tree, trigger_site):
     return main_tree.subtrees(filter = lambda x : is_clause_VP(x) and precedes(x, trigger_site))
@@ -241,20 +241,20 @@ def main():
         print(test)
         print("VERB: {0}".format(clause_overt_v_head(s_final)))
         pts = possible_trigger_sites(s_final)
-        #altered = tree_minus(s_final, pts)
-        altered = find_VPs(s_final)
+        #preceding_trigger = tree_minus(s_final, pts)
+        preceding_trigger = preceding_VPs(s_final, pts[0])
         print("####### ORIGINAL #######")
         s_final.pretty_print()
-        print("####### ALTERED #######")
-        #altered.pretty_print()
+        print("####### PRECEDING_TRIGGER #######")
+        #preceding_trigger.pretty_print()
         count = 0
         #for site in pts:
-        for site in altered:
+        for vp in preceding_trigger:
             print("### SITE {0} ###".format(count))
-            site.pretty_print()
-            print(site.treeposition())
+            vp.pretty_print()
+            print(vp.treeposition())
             count += 1
-            
+        
 if __name__ == "__main__":
     main()
     
