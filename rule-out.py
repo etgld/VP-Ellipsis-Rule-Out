@@ -65,25 +65,27 @@ def stanford_parse(s):
 def bllip_parse(s):
     return rrp.simple_parse(s)
 
-# tree positions are represented via tuples
-# containing the indices of their ancestors with respect to
-# previous ancestor starting from the root and going down
-def overlap(t1, t2):
-    least = min(len(t1), len(t2))
-    return t1[:least] < t2[:least]
 
 # stree1 precedes stree2 in ptree if stree1 is to the left
 # of stree2 in ptree and stree1 is not a subtree of stree2
-def precedes(ptree, stree1, stree2):
-    pst = ptree.subtrees()
-    guard1 = stree1 in pst 
-    guard2 = stree2 in pst
-    if (not guard1 or not guard2):
-        return False
-    return overlap(stree1.treeposition(), stree2.treeposition())
+def precedes(stree1, stree2):
+    t1 = stree1.treeposition()
+    t2 = stree2.treeposition()
+    # tree positions are represented via tuples
+    # containing the indices of their ancestors with respect to
+    # previous ancestor starting from the root and going down
+    least = min(len(t1), len(t2))
+    # using <= since we need to allow 
+    # for the anaphora site being contained in the same VP
+    # as the elided content as in the 'antecedent-contained'
+    # examples in basic-VPE
+    return t1[:least] <= t2[:least]
+
+def is_clause_VP(ptree):
+    return x.label() == 'VP' and x.parent().label() != 'VP'
 
 def preceding_VPs(main_tree, trigger_site):
-    pass
+    return main_tree.subtrees(filter = lambda x : is_clause_VP(x) and precedes(x, trigger_site))
 
 # This guards against multiple identical
 # subtrees appearing in the full tree barring
@@ -102,9 +104,6 @@ def children(ptree):
 # returns list of immediate children of a ParentedTree with a certain label
 def find_childen(ptree, label):
     return [stree for stree in ptree if stree.label() == label]
-
-def find_VPs(ptree):
-   return [stree for stree in ptree.subtrees(filter = lambda x : x.label() == 'VP' and x.parent().label() != 'VP')] 
 
 # return given main tree without the instance
 # of the given subtrees - using peq to avoid deletion

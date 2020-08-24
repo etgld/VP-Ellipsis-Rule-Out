@@ -1,6 +1,7 @@
 import sys
 import string
 import re
+import subprocess
 from stanza.server import CoreNLPClient
 from bllipparser import RerankingParser
 from nltk.tree import Tree
@@ -50,9 +51,9 @@ def texify_tree(s):
     # This is specifically to deal with commas in the tree
     # which throw off forest (like a lot of things...)
     s_parse_tree = re.sub(r'\[(,)', r'[ \\textit{ \g<1> }', s_parse_tree)
-    s_parse_tree = "\n \\begin{{forest}} \n{0}\n \\end{{forest}} \n".format(s_parse_tree)
+    s_parse_tree = "\n \\begin{{forest}} \n\t{0}\n \\end{{forest}} \n".format(s_parse_tree)
     # adjustbox is what gets most of these to fit to the page (even in landscape)
-    return "\n \\begin{{adjustbox}}{{max size={{\\textwidth}}{{\\textheight}}}} \n{0}\n \\end{{adjustbox}} \n".format(s_parse_tree)
+    return "\n \\begin{{adjustbox}}{{max size={{\\textwidth}}{{\\textheight}}}} \n\t{0}\n \\end{{adjustbox}} \n".format(s_parse_tree)
 
 def main():
     f_name = sys.argv[1]
@@ -67,7 +68,7 @@ def main():
         temp = line.split(':')
         index = temp[0]
         text = temp[1]
-        out.write("\\begin{samepage}")
+        out.write("\n\n \\begin{samepage}")
         out.write("\n\n \\item  \\verb|{0}|  \n\n".format(index))
         out.write("\n\n {{\\it {0} }} \n\n".format(text.rstrip()))
         s_final = texify_tree(stanford_parse(text))
@@ -77,8 +78,11 @@ def main():
         out.write("\n\n \\item {\\bf Charniak Parser: } \n\n") 
         out.write(b_final)
         out.write("\\end{itemize}")
-        out.write("\\end{samepage}")
+        out.write("\n\n \\end{samepage}")
     out.write(tail)
+    # this assumes you have LaTeX installed and working
+    # with the pdflatex command
+    # subprocess.run(['pdflatex', out_name])
     
 if __name__ == "__main__":
     main()
