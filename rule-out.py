@@ -28,6 +28,8 @@ punct = {'.', '.', '?'}
 rrp = RerankingParser.from_unified_model_dir('/home/e/.local/share/bllipparser/WSJ+Gigaword')  
 client = CoreNLPClient(annotators=['parse'], timeout=30000, memory='8G')
 
+# triggers are stores in plain text files separated by newlines
+# this loads them all into one set
 modal_aux_ts = set(open('modal_aux_triggers').read().split())
 have_ts = set(open('have_triggers').read().split())
 be_ts = set(open('be_triggers').read().split())
@@ -49,13 +51,15 @@ def leaf_parent(ptree, l):
     parent_loc = tree_loc[:-1]
     return ptree[parent_loc]
 
+# finds leaves which are in
+# the set of possible triggers
+# returns the node containing them and their tag
 def possible_trigger_sites(ptree):
     leaves = ptree.leaves()
     sites = []
     for leaf in leaves:
         if leaf in triggers:
-            # sites.append(leaf_parent(ptree, leaf))
-            sites.append(leaf_parent(ptree, leaf).parent())
+            sites.append(leaf_parent(ptree, leaf))
     return sites
                 
 def stanford_parse(s):
@@ -81,10 +85,17 @@ def precedes(stree1, stree2):
     # examples in basic-VPE
     return t1[:least] <= t2[:least]
 
+# tests if a VP is not in another VP,
+# used to get full VPs with their auxiliary verbs
+# and everything
 def is_clause_VP(ptree):
     return ptree.label() == 'VP' and ptree.parent().label() != 'VP'
 
+# Finds VPs which are candidates for filling in
+# at the site of anaphora
 def preceding_VPs(main_tree, trigger_site):
+    # filter for VPs which are not contained by other VPs
+    # and which are to the left of the site of the trigger
     return main_tree.subtrees(filter = lambda x : is_clause_VP(x) and precedes(x, trigger_site))
 
 # This guards against multiple identical
@@ -110,7 +121,8 @@ def find_childen(ptree, label):
 # of otherwise identical subtrees
 def tree_minus(main_tree, sub_trees):
     # using deep-copy since non-naive/destructive editing is tricky for nltk trees
-    result = deepcopy(main_tree) 
+    result = deepcopy(main_tree)
+    # find the given subtrees and remove them
     for stree in result.subtrees(filter = lambda x : any([peq(x, stree) for stree in sub_trees])):
         s_parent = stree.parent()
         s_idx = s_parent.index(stree)
@@ -144,7 +156,7 @@ def is_verb(v):
     return (v.label() == 'MD') or possible_v_head(v)
 
 # returns the nearest upper embedded clause
-# (determines if the immediate clause is embedded) 
+# (thus can determine if the immediate clause is embedded) 
 def sup_embedded(ptree):
     if ptree.label() in root_levels.union(clause_levels):
         # this happens often with coordinating conjunctions and does not
@@ -184,6 +196,10 @@ def inf_embedded(ptree, embedded):
                 inf_embedded(stree, embedded)        
     return embedded
 
+# This finds the main V head of a clause
+# even if there are multiple auxiliary verbs before it
+# e.g. given the tree for 'I might have gone back for something'
+# returns the node containing 'gone'
 def clause_overt_v_head(ptree):
     # If there's a coordinating conjunction
     # look in the first clause (as a convention)
@@ -217,6 +233,8 @@ def clause_overt_v_head(ptree):
 def is_simple(ptree): 
     return all([(not inf_embedded(stree)) for stree in ptree.root()])
 
+# Takes a syntactic tree and determines if
+# VP ellipsis is decidedly not present
 def rule_out(ptree):
     pass
 
@@ -225,6 +243,8 @@ def clause_elided_non_finite(ptree):
     v_head = clause_overt_v_head(ptree)
     return is_non_finite(v_head) and not is_aux(v_head)
 
+# converts parser output of the format '(ROOT (S (...)))'
+# to a nltk ParentedTree
 def list2ptree(s):
     return ParentedTree.fromstring(s)
 
