@@ -56,11 +56,7 @@ def leaf_parent(ptree, l):
 # returns the node containing them and their tag
 def possible_trigger_sites(ptree):
     leaves = ptree.leaves()
-    sites = []
-    for leaf in leaves:
-        if leaf in triggers:
-            sites.append(leaf_parent(ptree, leaf))
-    return sites
+    return [leaf_parent(ptree, leaf) for leaf in leaves if leaf in triggers]
                 
 def stanford_parse(s):
     ann = client.annotate(s, output_format='json')
@@ -232,11 +228,6 @@ def clause_overt_v_head(ptree):
 # by seeing if it has any embedded clasuses
 def is_simple(ptree): 
     return all([(not inf_embedded(stree)) for stree in ptree.root()])
-
-# Takes a syntactic tree and determines if
-# VP ellipsis is decidedly not present
-def rule_out(ptree):
-    pass
 
 # requirement to be a valid case of VPE
 def clause_elided_non_finite(ptree):
